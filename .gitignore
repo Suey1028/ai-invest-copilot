@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 环境变量和密钥（重要！）
+.env
+.env.local
+*.key
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+
+# Mac系统文件
+.DS_Store
+.DS_Store?
+._*
+
+# 数据和输出（防止误传大文件）
+data/
+outputs/
+*.png
+*.jpg
+*.csv
+*.xlsx
+
+# 日志
+*.log
+logs/
+
+# Jupyter
+.ipynb_checkpoints/
