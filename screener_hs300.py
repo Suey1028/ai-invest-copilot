@@ -19,11 +19,11 @@ load_dotenv()
 pro = ts.pro_api(os.getenv("TUSHARE_TOKEN"))
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-OUTPUT_PATH = PROJECT_ROOT / "outputs" / "hs300_top10_volatility.xlsx"
+PROJECT_ROOT = Path(__file__).resolve().parent#获取根目录路径
+OUTPUT_PATH = PROJECT_ROOT / "outputs" / "hs300_top10_volatility.xlsx"#结果保存在哪
 
 
-def get_hs300_top10_by_weight() -> pd.DataFrame:
+def get_hs300_top10_by_weight() -> pd.DataFrame:#函数返回的是一个dataframe，是给人看的
     """获取沪深300成分股中权重最大的Top 10。
 
     使用中证指数官方权重数据，比拉全市场行情更快更稳。
@@ -47,7 +47,7 @@ def get_hs300_top10_by_weight() -> pd.DataFrame:
     )
 
     # 按权重降序取Top 10
-    top10 = weights.sort_values("weight", ascending=False).head(10).reset_index(drop=True)
+    top10 = weights.sort_values("weight", ascending=False).head(10).reset_index(drop=True)#按照权重降序选取排前10的成分股，并且重置序号
     print("✅ 已选出权重最大的Top 10股票")
     return top10
 
@@ -67,25 +67,25 @@ def get_stock_daily(code: str, lookback_days: int = 120) -> pd.DataFrame:
     """
     from datetime import date, timedelta
 
-    end_date = date.today().strftime("%Y%m%d")
-    start_date = (date.today() - timedelta(days=lookback_days)).strftime("%Y%m%d")
+    end_date = date.today().strftime("%Y%m%d")#获取今天日期并且把日期对象转化为指定格式的字符串，%Y是年，%m是月，不够补0，%d是日，不够补0
+    start_date = (date.today() - timedelta(days=lookback_days)).strftime("%Y%m%d")#计算出120天前的日期
 
     # Tushare的股票代码需要带交易所后缀
-    if code.startswith("6"):
+    if code.startswith("6"):#根据股票代码开头第一个数字判断是上交所还是其他市场的股票
         ts_code = f"{code}.SH"  # 上交所
     else:
         ts_code = f"{code}.SZ"  # 深交所（0/3开头）
 
     try:
-        df = pro.daily(ts_code=ts_code, start_date=start_date, end_date=end_date)
+        df = pro.daily(ts_code=ts_code, start_date=start_date, end_date=end_date)#获取日线数据，比如开盘、最高、最低、成交量
     except Exception as exc:
-        raise RuntimeError(f"获取股票 {code} 日线数据失败：{exc}") from exc
+        raise RuntimeError(f"获取股票 {code} 日线数据失败：{exc}") from exc#报运行错误，from exc是为了返回真实的错误
 
     if df.empty:
         raise RuntimeError(f"股票 {code} 未返回任何日线数据")
 
     # Tushare返回的是降序（最新的在前），要按日期升序排列
-    df = df.sort_values("trade_date").reset_index(drop=True)
+    df = df.sort_values("trade_date").reset_index(drop=True)#按照日期升序进行排序
 
     return df[["trade_date", "close"]]
 
@@ -109,15 +109,15 @@ def calculate_annualized_volatility(
         raise ValueError("window 必须大于 1。")
 
     # 清洗收盘价并计算日收益率的滚动标准差，再按 252 个交易日年化。
-    numeric_prices = pd.to_numeric(prices, errors="coerce").dropna()
+    numeric_prices = pd.to_numeric(prices, errors="coerce").dropna()#to_numeric将收盘价转为数字，errors="coerce"的意思是转不了的变成 NaN，.dropna()是再去掉缺失值
     if len(numeric_prices) < window + 1:
         raise ValueError(
             f"有效收盘价不足：计算 {window} 日波动率至少需要 {window + 1} 个价格。"
         )
 
-    daily_returns = numeric_prices.pct_change(fill_method=None)
-    rolling_volatility = daily_returns.rolling(window=window).std() * math.sqrt(252)
-    latest_volatility = rolling_volatility.iloc[-1]
+    daily_returns = numeric_prices.pct_change(fill_method=None)#pct_change 是 pandas 的百分比变化，判断后一天比前一天涨了多少。fill_method=None是遇到空值是不做处理，直接空着，不需要填充
+    rolling_volatility = daily_returns.rolling(window=window).std() * math.sqrt(252)#计算每天的20日收益率的标准差，再乘根号252进行年化
+    latest_volatility = rolling_volatility.iloc[-1]#取最近一个交易日对应的 20 日年化波动率。
     if pd.isna(latest_volatility):
         raise ValueError("最近一期年化波动率无法计算。")
 
@@ -135,10 +135,10 @@ def main() -> None:
     """
     top10 = get_hs300_top10_by_weight()
 
-    summary_rows: list[dict[str, str | float]] = []
+    summary_rows: list[dict[str, str | float]] = []#类型标注，给人和编辑器看，不改变运行结果。是一个 list，里面每个元素是 dict；字典的 键 是 str，值 是 str 或 float
     total_stocks = len(top10)
 
-    for position, row in top10.iterrows():
+    for position, row in top10.iterrows():#.iterrows() 按行走，position是索引，row是这一行数据
         code = str(row["code"])
         name = str(row["name"])
         print(f"[{position + 1}/{total_stocks}] 计算 {name} 波动率...")
